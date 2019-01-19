@@ -14,7 +14,16 @@
     -->
     <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
         <property name="cacheManager" ref="cacheManager"/>
-        <property name="realm" ref="jdbcRealm"/>
+        <property name="authenticator" ref="authenticator"/>
+
+        <!-- 直接在 realms 里面配置 reals 属性 -->
+        <property name="realms">
+            <list>
+                <ref bean="jdbcRealm"></ref>
+                <ref bean="secondRealm"></ref>
+                <ref bean="thirdRealm"></ref>
+            </list>
+        </property>
     </bean>
 
     <!-- Let's use some enterprise caching support for better performance.  You can replace this with any enterprise
@@ -33,6 +42,23 @@
         <property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/>
     </bean>
 
+    <bean id="authenticator" class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
+        <!-- 配置 ModularRealmAuthenticator 类里面的 realms 属性 -->
+        <!-- 配置 ModularRealmAuthenticator 类里面的 authenticationStrategy 属性, 这里使用的是 AllSuccessfulStrategy 策略 -->
+        <!--<property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AllSuccessfulStrategy"/>
+        </property>-->
+
+        <!--  配置 ModularRealmAuthenticator 类里面的 authenticationStrategy 属性, 这里使用的是 FirstSuccessfulStrategy 策略  -->
+        <!--<property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.FirstSuccessfulStrategy"/>
+        </property>-->
+
+        <property name="authenticationStrategy">
+            <bean class="org.apache.shiro.authc.pam.AtLeastOneSuccessfulStrategy"/>
+        </property>
+    </bean>
+
     <!-- Used by the SecurityManager to access security data (users, roles, etc).
          Many other realm implementations can be used too (PropertiesRealm,
          LdapRealm, etc. -->
@@ -41,6 +67,27 @@
         3.1 直接配置实现了 Realm 接口的 Bean
     -->
     <bean id="jdbcRealm" class="edu.just.shiro.ShiroRealm">
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="MD5"></property>
+                <property name="hashIterations" value="1024"></property>
+            </bean>
+        </property>
+    </bean>
+
+    <!--
+        配置 SecondRealm
+    -->
+    <bean id="secondRealm" class="edu.just.shiro.SecondRealm">
+        <property name="credentialsMatcher">
+            <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
+                <property name="hashAlgorithmName" value="SHA1"></property>
+                <property name="hashIterations" value="1024"></property>
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="thirdRealm" class="edu.just.shiro.ThirdRealm">
         <property name="credentialsMatcher">
             <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
                 <property name="hashAlgorithmName" value="MD5"></property>
@@ -95,6 +142,7 @@
             2). authc 必须认证(登录)后才可以访问的页面
                 下面的 /** = authc 表示除了 login.jsp 之外的任何页面都需要认证(登陆)之后才可以访问
             3). logout 表示登出
+            4). roles 角色过滤器，验证用户是否拥有所有的角色
 
             如果配置 /user.jsp = authc，那么 user.jsp 则要认证后才可以被访问
         -->
@@ -104,9 +152,16 @@
                 /login = anon
                 /logout = logout
 
+                /user.jsp = roles[user]
+                /admin.jsp = roles[admin]
+
                 /** = authc
             </value>
         </property>
+    </bean>
+
+    <bean id="shiroService" class="edu.just.service.ShiroService">
+
     </bean>
 
 </beans>

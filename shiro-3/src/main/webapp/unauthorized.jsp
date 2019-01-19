@@ -4,6 +4,8 @@
     <title>Title</title>
 </head>
 <body>
-    <h4>User Page</h4>
+    <h4>
+        Unauthorized Page
+    </h4>
 </body>
 </html>
