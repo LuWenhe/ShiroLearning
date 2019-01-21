@@ -10,6 +10,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import javax.servlet.http.HttpSession;
+
 @Controller
 public class ShiroController {
 
@@ -17,7 +19,8 @@ public class ShiroController {
     private ShiroService shiroService;
 
     @RequestMapping("/testShiroAnnotion")
-    public String testShiroAnnotion() {
+    public String testShiroAnnotion(HttpSession session) {
+        session.setAttribute("key", "12345");
         shiroService.testMethod();
         return "list";
     }
@@ -30,7 +33,8 @@ public class ShiroController {
         if (!subject.isAuthenticated()) {
             UsernamePasswordToken token = new UsernamePasswordToken(username, password);
 
-            token.setRememberMe(false);
+            // 设置记住我
+            token.setRememberMe(true);
 
             try {
                 subject.login(token);

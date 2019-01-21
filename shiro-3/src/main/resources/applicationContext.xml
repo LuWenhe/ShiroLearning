@@ -13,17 +13,27 @@
         1.配置 SecurityManager!
     -->
     <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
-        <property name="cacheManager" ref="cacheManager"/>
+        <!--<property name="cacheManager" ref="cacheManager"/>-->
         <property name="authenticator" ref="authenticator"/>
 
         <!-- 直接在 realms 里面配置 reals 属性 -->
         <property name="realms">
             <list>
-                <ref bean="jdbcRealm"></ref>
-                <ref bean="secondRealm"></ref>
-                <ref bean="thirdRealm"></ref>
+                <ref bean="jdbcRealm"/>
+                <ref bean="secondRealm"/>
+                <ref bean="thirdRealm"/>
             </list>
         </property>
+        
+        <property name="rememberMeManager" ref="rememberMeManager"/>
+    </bean>
+
+    <bean id="rememberMeManager" class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+        <property name="cookie" ref="simpleCookie"/>
+    </bean>
+
+    <bean id="simpleCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+        <property name="maxAge" value="5"/>
     </bean>
 
     <!-- Let's use some enterprise caching support for better performance.  You can replace this with any enterprise
@@ -32,15 +42,15 @@
         2.配置 CacheManager
         2.1 需要加入 ehcache 的 jar 包以及配置文件
      -->
-    <bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
-        <!-- Set a net.sf.ehcache.CacheManager instance here if you already have one.  If not, a new one
+    <!--<bean id="cacheManager" class="org.apache.shiro.cache.ehcache.EhCacheManager">
+        &lt;!&ndash; Set a net.sf.ehcache.CacheManager instance here if you already have one.  If not, a new one
              will be creaed with a default config:
-             <property name="cacheManager" ref="ehCacheManager"/> -->
-        <!-- If you don't have a pre-built net.sf.ehcache.CacheManager instance to inject, but you want
+             <property name="cacheManager" ref="ehCacheManager"/> &ndash;&gt;
+        &lt;!&ndash; If you don't have a pre-built net.sf.ehcache.CacheManager instance to inject, but you want
              a specific Ehcache configuration to be used, specify that here.  If you don't, a default
-             will be used.: -->
+             will be used.: &ndash;&gt;
         <property name="cacheManagerConfigFile" value="classpath:ehcache.xml"/>
-    </bean>
+    </bean>-->
 
     <bean id="authenticator" class="org.apache.shiro.authc.pam.ModularRealmAuthenticator">
         <!-- 配置 ModularRealmAuthenticator 类里面的 realms 属性 -->
@@ -69,8 +79,8 @@
     <bean id="jdbcRealm" class="edu.just.shiro.ShiroRealm">
         <property name="credentialsMatcher">
             <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
-                <property name="hashAlgorithmName" value="MD5"></property>
-                <property name="hashIterations" value="1024"></property>
+                <property name="hashAlgorithmName" value="MD5"/>
+                <property name="hashIterations" value="1024"/>
             </bean>
         </property>
     </bean>
@@ -81,8 +91,8 @@
     <bean id="secondRealm" class="edu.just.shiro.SecondRealm">
         <property name="credentialsMatcher">
             <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
-                <property name="hashAlgorithmName" value="SHA1"></property>
-                <property name="hashIterations" value="1024"></property>
+                <property name="hashAlgorithmName" value="SHA1"/>
+                <property name="hashIterations" value="1024"/>
             </bean>
         </property>
     </bean>
@@ -90,8 +100,8 @@
     <bean id="thirdRealm" class="edu.just.shiro.ThirdRealm">
         <property name="credentialsMatcher">
             <bean class="org.apache.shiro.authc.credential.HashedCredentialsMatcher">
-                <property name="hashAlgorithmName" value="MD5"></property>
-                <property name="hashIterations" value="1024"></property>
+                <property name="hashAlgorithmName" value="MD5"/>
+                <property name="hashIterations" value="1024"/>
             </bean>
         </property>
     </bean>
@@ -138,15 +148,15 @@
         <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
         <!--
             配置哪些页面需要受保护以及访问这些页面需要的权限
-            1). anon 可以被匿名访问
-            2). authc 必须认证(登录)后才可以访问的页面
+            1). anon 表示可以被匿名访问
+            2). authc 表示必须认证(登录)后才可以访问的页面
                 下面的 /** = authc 表示除了 login.jsp 之外的任何页面都需要认证(登陆)之后才可以访问
             3). logout 表示登出
             4). roles 角色过滤器，验证用户是否拥有所有的角色
 
             如果配置 /user.jsp = authc，那么 user.jsp 则要认证后才可以被访问
         -->
-        <property name="filterChainDefinitions">
+       <!-- <property name="filterChainDefinitions">
             <value>
                 /login.jsp = anon
                 /login = anon
@@ -157,11 +167,23 @@
 
                 /** = authc
             </value>
-        </property>
+        </property>-->
+        <property name="filterChainDefinitionMap" ref="filterChainDefinitionMap"/>
     </bean>
 
-    <bean id="shiroService" class="edu.just.service.ShiroService">
+    <!--
+        配置一个bean, 该bean实际上是一个Map, 通过实例工厂方法的方式
+        factory-bean: 指向实例工厂方法的 Bean
+        factory-method: 指向实例工厂方法的名字
+    -->
+    <bean id="filterChainDefinitionMap"
+          factory-bean="filterChainDefinitionMapBuilder"
+          factory-method="buildFilterChainDefinitionMap"/>
 
-    </bean>
+    <!-- 配置工厂的实例 -->
+    <bean id="filterChainDefinitionMapBuilder"
+          class="edu.just.factory.FilterChainDefinitionMapBuilder"/>
+
+    <bean id="shiroService" class="edu.just.service.ShiroService"/>
 
 </beans>
